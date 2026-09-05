@@ -12,6 +12,11 @@ proxy:
   ssl: false
   hosts:
     - jobhist.duruxignition.com
+  app_port: 8080
+  healthcheck:
+    path: /health
+    interval: 3
+    timeout: 3
 
 registry:
   server: ghcr.io
