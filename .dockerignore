@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+jobs.db
+*.db
+*.db-wal
+*.db-shm
+.kamal
+Dockerfile
+cloudflared*

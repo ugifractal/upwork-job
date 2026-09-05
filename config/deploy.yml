@@ -1,0 +1,40 @@
+service: upwork-job
+image: ghcr.io/ugifractal/upwork-job
+
+servers:
+  web:
+    - drx.catfish-algol.ts.net
+
+ssh:
+  user: sugiarto
+
+proxy:
+  ssl: false
+  hosts:
+    - jobhist.duruxignition.com
+
+registry:
+  server: ghcr.io
+  username: ugifractal
+  password:
+    - GHCR_TOKEN
+
+env:
+  secret:
+    - API_KEY
+    - SMTP_HOST
+    - SMTP_PORT
+    - SMTP_USER
+    - SMTP_PASS
+    - SMTP_FROM
+    - NOTIFY_EMAIL
+  clear:
+    HTTP_PORT: 8080
+    HTTP_HOST: 0.0.0.0
+    DB_PATH: /data/jobs.db
+
+volumes:
+  - "/var/lib/upwork-job:/data"
+
+builder:
+  arch: amd64
