@@ -25,7 +25,21 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /health", s.handleHealth)
 	mux.Handle("POST /api/jobs", s.requireAuth(http.HandlerFunc(s.handleCreateJob)))
 	mux.Handle("GET /api/jobs", s.requireAuth(http.HandlerFunc(s.handleListJobs)))
-	return logRequests(mux)
+	return cors(logRequests(mux))
+}
+
+func cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 type createJobRequest struct {
