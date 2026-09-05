@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -19,6 +20,9 @@ import (
 	"go-upwork-job/internal/store"
 )
 
+//go:embed db/migrate/*.sql
+var migrationsFS embed.FS
+
 func main() {
 	migrateCmd := flag.String("migrate", "", "run migration (up, down, status)")
 	flag.Parse()
@@ -35,7 +39,7 @@ func main() {
 	defer db.Close()
 
 	st := store.New(db)
-	runner := migrate.New(db, "db/migrate")
+	runner := migrate.New(db, migrationsFS, "db/migrate")
 
 	switch *migrateCmd {
 	case "up":

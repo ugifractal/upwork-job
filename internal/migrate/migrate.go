@@ -3,8 +3,8 @@ package migrate
 import (
 	"database/sql"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io/fs"
+	"path"
 	"sort"
 	"strings"
 )
@@ -22,12 +22,13 @@ type migration struct {
 }
 
 type Runner struct {
-	db  *sql.DB
-	dir string
+	db   *sql.DB
+	fsys fs.FS
+	dir  string
 }
 
-func New(db *sql.DB, dir string) *Runner {
-	return &Runner{db: db, dir: dir}
+func New(db *sql.DB, fsys fs.FS, dir string) *Runner {
+	return &Runner{db: db, fsys: fsys, dir: dir}
 }
 
 func (r *Runner) Up() error {
@@ -114,13 +115,13 @@ func (r *Runner) Status() error {
 		if applied[m.version] {
 			state = "applied"
 		}
-		fmt.Printf("%-12s  %-10s  %s\n", m.version, state, filepath.Base(m.downFile))
+		fmt.Printf("%-12s  %-10s  %s\n", m.version, state, path.Base(m.downFile))
 	}
 	return nil
 }
 
 func (r *Runner) applyUp(m migration) error {
-	sqlBytes, err := os.ReadFile(m.upFile)
+	sqlBytes, err := fs.ReadFile(r.fsys, m.upFile)
 	if err != nil {
 		return err
 	}
@@ -142,7 +143,7 @@ func (r *Runner) applyUp(m migration) error {
 }
 
 func (r *Runner) applyDown(m migration) error {
-	sqlBytes, err := os.ReadFile(m.downFile)
+	sqlBytes, err := fs.ReadFile(r.fsys, m.downFile)
 	if err != nil {
 		return err
 	}
@@ -187,7 +188,7 @@ func (r *Runner) appliedVersions() (map[string]bool, error) {
 }
 
 func (r *Runner) loadMigrations() ([]migration, error) {
-	entries, err := os.ReadDir(r.dir)
+	entries, err := fs.ReadDir(r.fsys, r.dir)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func (r *Runner) loadMigrations() ([]migration, error) {
 				m = &migration{version: version}
 				byVersion[version] = m
 			}
-			m.upFile = filepath.Join(r.dir, name)
+			m.upFile = path.Join(r.dir, name)
 		case strings.HasSuffix(name, ".down.sql"):
 			version := strings.TrimSuffix(name, ".down.sql")
 			m, ok := byVersion[version]
@@ -211,7 +212,7 @@ func (r *Runner) loadMigrations() ([]migration, error) {
 				m = &migration{version: version}
 				byVersion[version] = m
 			}
-			m.downFile = filepath.Join(r.dir, name)
+			m.downFile = path.Join(r.dir, name)
 		}
 	}
 
